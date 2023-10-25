@@ -198,7 +198,7 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_WHITE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_BLACK)
 
-    t = Tetris(starting_level=12)
+    t = Tetris()
     NS_PER_FRAME = 800 * 1000 * 1000
     NS_PER_LEVEL = 50 * 1000 * 1000
     countdown_start = time.time_ns()
