@@ -20,6 +20,7 @@ possible extensions:
  - game over checking is unimplemented. all the functionality for this theoretically exists but i couldn't get curses to print the game over message
  - adding in different colors for different pieces. i had a plan to do this by keeping $n$ versions of the board for each color, then bitwise-`or`ing all the color boards together to do the full board computations
  - rotating pieces (and input in general) feels somewhat funky compared to "real" tetris
+ - add in the bag system for choosing the next piece. right now the next piece is chosen at random
  - adding in sound effects and music
 
 <img width="1582" alt="Screen Shot 2023-10-24 at 1 12 18 PM" src="https://github.com/reeceyang/tetris/assets/7040416/6bd2eeab-08b8-4959-a42a-aadb8062ff3f">
