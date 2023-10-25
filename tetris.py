@@ -26,6 +26,15 @@ def rotate_shape_ccw_90(shape: tuple[int]):
     # https://stackoverflow.com/questions/8421337/rotating-a-two-dimensional-array-in-python
     return tuple(int("".join(new_layer), 2) for new_layer in zip(*tuple(f"{layer:0>{width}b}" for layer in shape)[::-1]))
 
+class Color(Enum):
+    CYAN = "i"
+    YELLOW = "o"
+    PURPLE = "t"
+    GREEN = "s"
+    BLUE = "j"
+    RED = "z"
+    ORANGE = "l"
+
 class Piece:
     def __init__(self, loc, shape):
         """
@@ -82,12 +91,13 @@ class Tetris:
         self.hold_piece: None | Piece = None
         self.cleared_lines: int = 0
         self.starting_level: int = starting_level
+        self.game_over: bool = False
 
     def _add_piece(self, shape):
         new_piece = Piece(Loc(self.height - len(shape), self.width // 2), shape)
-        assert new_piece.get_height() <= self.height
-        assert new_piece.get_width() <= self.width
         self.current_piece = new_piece
+        if not self._is_current_piece_valid():
+            self.game_over = True
 
     def _next_piece(self):
         self._add_piece(random.choice(list(SHAPES.values())))
@@ -110,21 +120,18 @@ class Tetris:
         self.can_hold = True
 
     def _is_current_piece_valid(self):
-        """
-        WIP
-        """
         if self.current_piece.loc.row < 0:
             return False
-        if self.current_piece.loc.col >= self.width:
+        if self.current_piece.loc.col > self.width:
             return False
         if self.current_piece.loc.col - self.current_piece.get_width() < 0:
             return False
         shape = self.current_piece.get_bits()
         for row, layer in enumerate(shape):
             layer_row = row + self.current_piece.loc.row
-            if next_row >= len(self.board):
+            if layer_row >= len(self.board):
                 break
-            if self.board[next_row] & layer != 0:
+            if self.board[layer_row] & layer != 0:
                 return False
         return True
 
@@ -132,18 +139,11 @@ class Tetris:
         """
         returns True if the piece was moved down, False if it was stopped
         """
-        if self.current_piece.loc.row == 0:
+        self.current_piece.loc.row -= 1
+        if not self._is_current_piece_valid():
+            self.current_piece.loc.row += 1
             self._stop_piece()
             return False
-        shape = self.current_piece.get_bits()
-        for row, layer in enumerate(shape):
-            next_row = row + self.current_piece.loc.row - 1
-            if next_row >= len(self.board):
-                break
-            if self.board[next_row] & layer != 0:
-                self._stop_piece()
-                return False
-        self.current_piece.loc.row -= 1
         return True
 
     def drop(self):
@@ -151,36 +151,24 @@ class Tetris:
             pass
 
     def move_left(self):
-        if self.current_piece.loc.col == self.width:
-            return
-        shape = self.current_piece.get_bits()
-        for row, layer in enumerate(shape):
-            layer_row = row + self.current_piece.loc.row
-            if layer_row >= len(self.board):
-                break
-            if self.board[layer_row] & (layer << 1) != 0:
-                return
         self.current_piece.loc.col += 1
+        if not self._is_current_piece_valid():
+            self.current_piece.loc.col -= 1
 
     def move_right(self):
-        if self.current_piece.loc.col - self.current_piece.get_width() == 0:
-            return
-        shape = self.current_piece.get_bits()
-        for row, layer in enumerate(shape):
-            layer_row = row + self.current_piece.loc.row
-            if layer_row >= len(self.board):
-                break
-            if self.board[layer_row] & (layer >> 1) != 0:
-                return
         self.current_piece.loc.col -= 1
+        if not self._is_current_piece_valid():
+            self.current_piece.loc.col += 1
 
     def rot_right(self):
-        # TODO: make sure move is valid
         self.current_piece.rot_right()
+        if not self._is_current_piece_valid():
+            self.current_piece.rot_left()
 
     def rot_left(self):
-        # TODO: make sure move is valid
         self.current_piece.rot_left()
+        if not self._is_current_piece_valid():
+            self.current_piece.rot_right()
 
     def hold(self):
         if self.hold_piece is None:
@@ -210,7 +198,7 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_WHITE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_BLACK)
 
-    t = Tetris(starting_level=8)
+    t = Tetris(starting_level=12)
     NS_PER_FRAME = 800 * 1000 * 1000
     NS_PER_LEVEL = 50 * 1000 * 1000
     countdown_start = time.time_ns()
@@ -231,7 +219,7 @@ CLEARED LINES: {t.cleared_lines}
 
 LEVEL: {t.get_level()}
 """)
-
+            
     print_board()
     while True:
         ch = stdscr.getch()
@@ -255,6 +243,9 @@ LEVEL: {t.get_level()}
             countdown_start = time.time_ns()
             t.move_down()
             print_board()
+
+    while True:
+        pass
 
 if __name__ == "__main__":
     curses.wrapper(main)
